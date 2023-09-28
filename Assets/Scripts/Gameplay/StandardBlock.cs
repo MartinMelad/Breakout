@@ -2,53 +2,58 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using Random = UnityEngine.Random;
 
 public class StandardBlock : MonoBehaviour
 {
     #region Filed
 
-    private int numberOfCollision = 2;
-    private int point = 3;
+    protected  int healthe  = 1;
+    protected int point = 1;
+
+    protected AddPointsEvent addPointsEvent = new AddPointsEvent();
+    
+    BlockDestroyedEvent blockDestroyedEvent = new BlockDestroyedEvent();
 
     #endregion
 
-    #region Unity Mthodes
+    #region Unity Methods
 
-    void Start()
+    virtual protected void Start()
     {
-        int randomSprite = Random.Range(21, 23);
-        if (randomSprite == 22)
-        {
-            numberOfCollision = 1;
-            point = 1;
-        }
-        string path = "Sprites/" + Convert.ToString(randomSprite) + "-Breakout-Tiles";
-        GetComponent<SpriteRenderer>().sprite = Resources.Load<Sprite>(path);
+        EventManager.AddAddPointsInvoker(this);
+        EventManager.AddBlockDestroyedInvoker(this);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    private void OnCollisionEnter2D(Collision2D col)
+    
+    virtual protected void OnCollisionEnter2D(Collision2D col)
     {
         if (col.gameObject.CompareTag("Ball"))
         {
-            numberOfCollision--;
-            if (numberOfCollision <= 0)
+            healthe--;
+            if (healthe == 0)
             {
-                HUD.AddScore(point);
+                addPointsEvent.Invoke(point);
+                EventManager.RemoveAddPointsInvoker(this);
+                blockDestroyedEvent.Invoke();
+                EventManager.RemoveBlockDestroyedInvoker(this);
                 Destroy(gameObject);
             }
-            else
-            {
-                GetComponent<SpriteRenderer>().sprite = Resources.Load<Sprite>("Sprites/22-Breakout-Tiles");
-            }
         }
+    }
 
+    #endregion
+
+    #region Public Methods
+
+    public void AddAddPointsListener(UnityAction<int> listener)
+    {
+        addPointsEvent.AddListener(listener);
+    }
+    
+    public void AddBlockDestroyedListener(UnityAction listener)
+    {
+        blockDestroyedEvent.AddListener(listener);
     }
 
     #endregion

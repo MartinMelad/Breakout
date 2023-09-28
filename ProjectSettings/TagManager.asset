@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ball
   - Paddle
+  - Block
+  - HUD
   layers:
   - Default
   - TransparentFX

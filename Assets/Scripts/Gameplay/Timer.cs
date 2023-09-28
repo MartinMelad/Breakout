@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 /// <summary>
 /// A timer
@@ -18,6 +19,8 @@ public class Timer : MonoBehaviour
 	
 	// support for Finished property
 	bool started = false;
+
+	private TimerFinishedEvent timerFinishedEvent = new TimerFinishedEvent();
 	
 	#endregion
 	
@@ -57,7 +60,21 @@ public class Timer : MonoBehaviour
     {
 		get { return running; }
 	}
-
+	
+	public float SecondsLeft
+	{
+		get
+		{
+			if (running)
+			{
+				return totalSeconds - elapsedSeconds;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+	}
     #endregion
 
     #region Methods
@@ -74,6 +91,7 @@ public class Timer : MonoBehaviour
 			if (elapsedSeconds >= totalSeconds)
             {
 				running = false;
+				timerFinishedEvent.Invoke();
 			}
 		}
 	}
@@ -99,6 +117,17 @@ public class Timer : MonoBehaviour
 	public void Stop()
 	{
 		started = false;
+		running = false;
+	}
+	
+	public void AddTime(float seconds)
+	{
+		totalSeconds += seconds;
+	}
+
+	public void AddTimerFinishedListener(UnityAction listener)
+	{
+		timerFinishedEvent.AddListener(listener);
 	}
 	#endregion
 }

@@ -5,48 +5,46 @@ using UnityEngine;
 
 public class Paddle : MonoBehaviour
 {
+    #region Filed
+
     private Rigidbody2D rb2d;
 
     private float halfColliderWidth;
     
-    const float BounceAngleHalfRange = 60 * Mathf.Deg2Rad;
-    
+    const float BounceAngleHalfRange = 70 * Mathf.Deg2Rad;
+
+    private bool isFrozen = false;
+
+    private Timer freezeTimer;
+
+    #endregion
+
+    #region Unity Methods
+
     // Start is called before the first frame update
     void Start()
     {
         rb2d = GetComponent<Rigidbody2D>();
-        halfColliderWidth =  (GetComponent<BoxCollider2D>().size.x/2);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
+        halfColliderWidth =  (GetComponent<BoxCollider2D>().size.x/2)*rb2d.transform.localScale.x;
         
+        freezeTimer = gameObject.AddComponent<Timer>();
+        freezeTimer.AddTimerFinishedListener(HandleFreezeTimerFinishedEvent);
+        EventManager.AddFreezerEffectActivatedListener(HandelFreezeActivated);
     }
+    
     
     private void FixedUpdate()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float x = CalculateClampedX(rb2d.position .x + horizontalInput * ConfigurationUtils.PaddleMoveUnitsPerSecond *
-                                        Time.fixedDeltaTime);
-        rb2d.MovePosition (new Vector2(x, transform.position.y));
+        if (!isFrozen)
+        {
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float x = CalculateClampedX(rb2d.position.x + horizontalInput *
+                ConfigurationUtils.PaddleMoveUnitsPerSecond *
+                Time.fixedDeltaTime);
+            rb2d.MovePosition(new Vector2(x, transform.position.y));
+        }
     }
 
-    private float CalculateClampedX(float x)
-    {
-        if (x + halfColliderWidth >= ScreenUtils.ScreenRight)
-            x = ScreenUtils.ScreenRight - halfColliderWidth;
-        
-        if (x - halfColliderWidth <= ScreenUtils.ScreenLeft)
-            x = ScreenUtils.ScreenLeft + halfColliderWidth;
-        
-        return x;
-    }
-
-    /// <summary>
-    /// Detects collision with a ball to aim the ball
-    /// </summary>
-    /// <param name="coll">collision info</param>
     void OnCollisionEnter2D(Collision2D coll)
     {
         if (coll.gameObject.CompareTag("Ball") &&
@@ -66,7 +64,28 @@ public class Paddle : MonoBehaviour
             ballScript.SetDirection(direction);
         }
     }
-    
+
+
+    #endregion
+
+    #region Private Methods
+
+    private float CalculateClampedX(float x)
+    {
+        if (x + halfColliderWidth >= ScreenUtils.ScreenRight)
+            x = ScreenUtils.ScreenRight - halfColliderWidth;
+        
+        if (x - halfColliderWidth <= ScreenUtils.ScreenLeft)
+            x = ScreenUtils.ScreenLeft + halfColliderWidth;
+        
+        return x;
+    }
+
+    /// <summary>
+    /// Detects collision with a ball to aim the ball
+    /// </summary>
+    /// <param name="coll">collision info</param>
+
     bool TopCollision(Collision2D coll)
     {
         const float tolerance = 0.05f;
@@ -76,4 +95,29 @@ public class Paddle : MonoBehaviour
         coll.GetContacts(contacts);
         return Mathf.Abs(contacts[0].point.y - contacts[1].point.y) < tolerance;
     }
+
+    void HandelFreezeActivated(float duration)
+    {
+        isFrozen = true;
+        if (!freezeTimer.Running)
+        {
+            freezeTimer.Duration = duration;
+            freezeTimer.Run();
+        }
+        else
+        {
+            freezeTimer.AddTime(duration);
+        }
+    }
+    
+    void HandleFreezeTimerFinishedEvent()
+    {
+        isFrozen = false;
+        freezeTimer.Stop();
+        AudioManager.Play(AudioClipName.FreezerEffectDeactivated);
+    }
+
+
+    #endregion
+    
 } 

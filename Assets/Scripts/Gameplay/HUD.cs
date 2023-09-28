@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class HUD : MonoBehaviour
@@ -19,6 +20,20 @@ public class HUD : MonoBehaviour
     private static int score = 0;
     private static Text scoreText;
     
+    LastBallLostEvent lastBallLostEvent = new LastBallLostEvent();
+    
+    #region Properties
+
+    /// <summary>
+    /// Gets the score
+    /// </summary>
+    public int Score
+    {
+        get { return score; }
+    }
+
+    #endregion
+    
     void Start()
     {
         ballsLeft = ConfigurationUtils.NumberOfBallPerGame;
@@ -27,22 +42,29 @@ public class HUD : MonoBehaviour
 
         scoreText = scoreTextGameObject.GetComponent<Text>();
         scoreText.text = scorePrefix + score.ToString();
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
         
+        EventManager.AddBallLostListener(LoseBall);
+        EventManager.AddAddPointsListener(AddScore);
+        
+        EventManager.AddLastBallLostInvoker(this);
+
     }
     
-    public static void LoseBall()
+    public void AddLastBallLostListener(UnityAction listener)
+    {
+        lastBallLostEvent.AddListener(listener);
+    }
+
+    void LoseBall()
     {
         ballsLeft--;
         ballsLeftText.text = BallsLeftPrefix + ballsLeft.ToString();
+        if (ballsLeft == 0)
+        {
+            lastBallLostEvent.Invoke();
+        }
     }
-
-    public static void AddScore(int points)
+    void AddScore(int points)
     {
         score += points ;
         scoreText.text = scorePrefix + score.ToString();

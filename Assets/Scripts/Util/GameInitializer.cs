@@ -15,5 +15,7 @@ public class GameInitializer : MonoBehaviour
         // initialize screen utils
         ScreenUtils.Initialize();
         ConfigurationUtils.Initialize();
+        DifficultyUtils.Initialize();
+       
     }
 }
